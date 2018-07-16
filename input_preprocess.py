@@ -18,11 +18,21 @@ def make_history(data, index_list, history_num):
 
 		history = pd.DataFrame()
 
-		for i in index_list:
-			for n in range(history_num):
-				data[i+'_shifted_by_'+str(n+1)] = data[i].shift(n+1)
 
-		return data[history_num:]
+		for i in index_list:
+			if history_num > 0:
+				for n in range(history_num):
+					if not i+'_shifted_by_'+str(n+1) in data.columns:
+						data[i+'_shifted_by_'+str(n+1)] = data[i].shift(n+1)
+			else:
+				for n in range(-history_num):
+					if not i+'_shifted_by_'+str(-(n+1)) in data.columns:
+						data[i+'_shifted_by_'+str(-(n+1))] = data[i].shift(-(n+1))
+
+		if history_num > 0:
+			return data[history_num:]
+		else:
+			return data[:history_num]
 		# data.drop(data.index[])
 		# df.drop(df.index[[1,3]], inplace=True)
 		# return history
@@ -46,7 +56,10 @@ def shift(data, index_list, shift_num):
 	for i in index_list:
 		data[i] = data[i+'_shifted_by_'+str(shift_num)].shift(shift_num)
 
-	return data[shift_num:]
+	if shift_num > 0:
+		return data[shift_num:]
+	else:
+		return data[:shift_num]
 
 def get_current(data):
 	data['cur'] = ((data['cur_raw'] / 1024.0)*5000 - 2500) / 100

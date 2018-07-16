@@ -48,12 +48,13 @@ if __name__ == '__main__':
 
 	dataframe = pd.read_csv(FLAGS.f_dir+FLAGS.f_n)
 
-	HISTORY_NUM = FLAGS.n_h
-
-	history_labels = ['vel_x', 'vel_y', 'vel_z', 'roll', 'pitch', 'yaw', 'rc0', 'rc1', 'rc2', 'rc3']
-	# x_labels = ['vel_x', 'vel_y', 'vel_z', 'acc_x', 'acc_y', 'acc_z', 'roll', 'pitch', 'yaw', 'rc0', 'rc1', 'rc2', 'rc3']
-	# x_labels = ['vel_x', 'vel_y', 'vel_z', 'acc_x', 'acc_y', 'acc_z', 'roll', 'pitch', 'yaw', 'act_vx', 'act_vy', 'act_vz']
-	x_labels = ['vel_x', 'vel_y', 'vel_z', 'acc_x', 'acc_y', 'acc_z', 'roll', 'pitch', 'yaw', 'act_vx', 'act_vy']
+	HISTORY_NUM = 1
+	history_labels = ['power']
+	# x_labels = ['vel_x', 'vel_y', 'vel_z', 'roll', 'pitch', 'yaw']
+	x_labels = ['vel_x', 'vel_y', 'vel_z', 'roll', 'pitch', 'yaw', 'act_vx', 'act_vy', 'act_vz']
+	# x_labels = ['vel_x', 'vel_y', 'vel_z', 'roll', 'pitch', 'yaw', 'acc']
+	# x_labels = ['vol', 'cur']
+	# x_labels = ['vel_x', 'vel_y', 'rc0', 'rc1', 'rc2', 'rc3', 'acc_z', 'roll', 'pitch', 'yaw']
 	y_label = ['power']
 
 	# make history columns
@@ -63,10 +64,11 @@ if __name__ == '__main__':
 
 	# dataframe = ip.make_history(dataframe, history_labels, HISTORY_NUM)
 
-	
+	# print (dataframe[['power', 'power_shifted_by_1']])
 	# index_list = list(dataframe)
 	dataframe = ip.get_moving_average(dataframe, ['power'], 2)
 	# dataframe = ip.shift(dataframe, ['power'], 1)
+
 
 	
 	# input normalization
@@ -74,7 +76,7 @@ if __name__ == '__main__':
 	x_data = sc.fit_transform(dataframe[x_labels])
 	x_data = dataframe[x_labels].values
 
-	y_data = dataframe[y_label].values[HISTORY_NUM:]
+	y_data = dataframe[y_label].values
 
 
 
@@ -83,6 +85,8 @@ if __name__ == '__main__':
 	
 	# print (x_data)
 	# print y_data
+
+
 
 
 	log.logger.info("x_shape: " + str(x_data.shape) + ", y_shape:" + str(y_data.shape))
