@@ -37,6 +37,9 @@ import pandas as pd
 import numpy as np
 from keras import backend as K
 
+from tkinter import Tk
+from tkinter.filedialog import askopenfilenames
+
 import time
 
 import input_preprocess as ip
@@ -46,25 +49,41 @@ FLAGS = config.flags.FLAGS
 
 if __name__ == '__main__':
 
-	dataframe = pd.read_csv(FLAGS.f_dir+FLAGS.f_n)
+	Tk().withdraw()
+	filelist = askopenfilenames()
 
-	HISTORY_NUM = 0
-	history_labels = ['vel_x', 'vel_y', 'vel_z', 'acc_x', 'acc_y', 'acc_z', 'roll', 'pitch', 'yaw', 'act_vx', 'act_vy']
+	# df = pd.read_csv(FLAGS.f_dir+FLAGS.f_n)
+
 	# x_labels: 'vel_x', 'vel_y', 'vel_z', 'acc_x', 'acc_y', 'acc_z', 'roll', 'pitch', 'yaw', 'act_vx', 'act_vy'
 	x_labels = ['vel_x', 'vel_y', 'vel_z', 'acc_x', 'acc_y', 'acc_z', 'roll', 'pitch', 'yaw', 'act_vx', 'act_vy']
 	y_label = ['power']
 
-	# make history columns
-	for l in history_labels:
-		for n in range(HISTORY_NUM):
-			x_labels.append(l+"_" + str(n+1))	
+	x_data_list = []
+	y_data_list = []
+
+	sc = StandardScaler()
+
+	for f in filelist:
+		df = pd.read_csv(f)
+		x_data = sc.fit_transform(df[x_labels])
+		x_data = pd.DataFrame(data=x_data, columns=x_labels)
+		df = x_data.join(df[y_label])
+
+		x_data, y_data = ip.reshape_for_rnn(df, time_window=10)
+
+		x_data_list.append(x_data)
+		y_data_list.append(y_data)
+
+	x_data = np.concatenate(x_data_list)
+	y_data = np.concatenate(y_data_list)
 
 	# input normalization
-	sc = StandardScaler()
-	x_data = sc.fit_transform(dataframe[x_labels])
-	# x_data = dataframe[x_labels].values
+	# sc = StandardScaler()
+	# x_data = sc.fit_transform(df[x_labels])
+	# x_data = pd.DataFrame(data=x_data, columns=x_labels)
+	# df = x_data.join(df[y_label])
 
-	y_data = dataframe[y_label].values
+	# x_data, y_data = ip.reshape_for_rnn(df)
 
 
 	log.logger.info("x_shape: " + str(x_data.shape) + ", y_shape:" + str(y_data.shape))
@@ -73,7 +92,7 @@ if __name__ == '__main__':
 	x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size=FLAGS.test_size, random_state=FLAGS.seed)
 
 	# Create model
-	model = models.flexible_model_koo(input_dim=x_data.shape[1], output_dim=1)
+	model = models.lstm(input_shape=(x_data.shape[1], x_data.shape[2]))
 
 	# Start training
 	model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=FLAGS.n_e,
@@ -91,16 +110,11 @@ if __name__ == '__main__':
 	# save prediction result
 	predictions = model.predict(x_test)
 	y_test_t = y_test.reshape((-1, 1))
-	predictions_train = model.predict(x_train)
-	y_train_t = y_train.reshape((-1, 1))
 	result = np.concatenate((y_test_t,predictions),axis=1)
-	result_train = np.concatenate((y_train_t, predictions_train), axis=1)
 	now = time.localtime()
 	s_time = "%02d%02d-%02d%02d%02d" % (now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
-	result_file_name = "pred_result/"+str(FLAGS.depth)+ "-" + str(FLAGS.h_size)+"-"+s_time+".csv"
-	train_result_file_name = "pred_result/"+str(FLAGS.depth)+ "-" + str(FLAGS.h_size)+"-"+s_time+"-train.csv"
+	result_file_name = "pred_result/"+str(FLAGS.depth)+ "-" + str(FLAGS.h_size)+"-"+str(FLAGS.b_s)+"-"+str(FLAGS.dropout_rate)+"-"+s_time+".csv"
 	np.savetxt(result_file_name, result, delimiter=",")
-	np.savetxt(train_result_file_name, result_train, delimiter=",")
 
 
 	# Save model

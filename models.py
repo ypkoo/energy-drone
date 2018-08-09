@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #coding=utf8
 from keras.models import Sequential, Model
-from keras.layers import Reshape, Dropout, Conv1D, Convolution1D, Dense, MaxPooling1D, Flatten, Activation, Concatenate, Input, concatenate
+from keras.layers import Reshape, Dropout, Conv1D, Convolution1D, Dense, MaxPooling1D, Flatten, Activation, Concatenate, Input, concatenate, LSTM, GRU
 from keras.layers.normalization import BatchNormalization
 from keras.optimizers import *
 import config
@@ -78,6 +78,7 @@ def flexible_model_koo(input_dim, output_dim=1):
     # adam = Adam(lr=0.0003, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
     adam = Adam(lr=0.0003)
     model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mean_squared_error', mean_acc])
+    # model.compile(loss='mean_squared_error', optimizer='rmsprop', metrics=['mean_squared_error', mean_acc])
     model.summary()
 
     return model
@@ -108,62 +109,6 @@ def create_convnet(input_dim, feature_dim, output_dim=1):
     # Compile model
     model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mean_squared_error', mean_acc])
     model.summary()
-
-    return model
-    
-
-def test_model(input_dim, output_dim=1):
-    model = Sequential()
-
-    model.add(Dense(12, input_dim=input_dim, kernel_initializer='uniform', activation='relu'))
-    model.add(Dense(15, kernel_initializer='uniform', activation='relu'))
-    model.add(Dense(15, kernel_initializer='uniform', activation='relu'))
-    model.add(Dense(output_dim, kernel_initializer='uniform', activation='relu'))
-    # Compile model
-    model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mean_squared_error'])
-
-    return model
-
-
-def cnn_1d_speed_model(input_dim, output_dim=1):
-    model = Sequential()
-
-    # Convolution and pooling layer
-    model.add(Convolution1D(nb_filter=FLAGS.n_f, filter_length=FLAGS.l_f,
-                            activation='relu', input_shape=(FLAGS.n_h, 1)))
-    # model.add(MaxPooling1D())
-    model.add(Convolution1D(nb_filter=FLAGS.n_f, filter_length=FLAGS.l_f, activation='relu'))
-    # model.add(MaxPooling1D())
-    model.add(Convolution1D(nb_filter=FLAGS.n_f, filter_length=FLAGS.l_f, activation='relu'))
-    # model.add(MaxPooling1D())
-
-    model.add(Flatten())
-
-    # model.add(Dense(12, input_dim=input_dim, kernel_initializer='uniform', activation='relu'))
-    # model.add(Dense(50, kernel_initializer='uniform', activation='relu'))
-    # model.add(Dense(50, kernel_initializer='uniform', activation='relu'))
-    # model.add(Dense(output_dim, kernel_initializer='uniform', activation='relu'))
-    for i in range(FLAGS.depth - 2):
-
-        model.add(Dense(FLAGS.h_size - i*0, kernel_initializer='uniform'))
-        model.add(Dropout(FLAGS.dropout_rate))
-        model.add(BatchNormalization())
-        model.add(Activation('relu'))
-    # Compile model
-    model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mean_squared_error', mean_acc])
-    model.summary()
-
-    return model
-
-def cnn_max_1d(input_dim, output_dim=1):
-
-    model = Convolution1D(nb_filter=FLAGS.n_f, filter_length=FLAGS.l_f,
-                            activation='relu', input_shape=(FLAGS.n_h, 1))
-    model = MaxPooling1D()(model)
-    model = Convolution1D(nb_filter=FLAGS.n_f, filter_length=FLAGS.l_f, activation='relu')(model)
-    model = MaxPooling1D()(model)
-    model = Convolution1D(nb_filter=FLAGS.n_f, filter_length=FLAGS.l_f, activation='relu')(model)
-    model = MaxPooling1D()(model)
 
     return model
 
@@ -197,6 +142,47 @@ def cnn_1d_koo(input_dim, output_dim=1):
     model = Model(inputs, dense)
 
     # Compile model
+    model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mean_squared_error', mean_acc])
+    model.summary()
+
+    return model
+
+def lstm(input_shape):
+
+    lstm_input = Input(shape=input_shape)
+
+    lstm = LSTM(32)(lstm_input)
+
+    x = Dense(32, activation='relu')(lstm)
+    x = Dense(32, activation='relu')(x)
+    x = Dense(32, activation='relu')(x)
+    x = Dense(32, activation='relu')(x)
+    x = Dense(32, activation='relu')(x)
+    # x = Dense(64, activation='relu')(x)
+
+    output = Dense(1)(x)
+
+    model = Model(lstm_input, output)
+
+    model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mean_squared_error', mean_acc])
+    model.summary()
+
+    return model
+
+def gru(input_shape):
+
+    gru_input = Input(shape=input_shape)
+
+    gru = GRU(32)(gru_input)
+
+    x = Dense(64, activation='relu')(gru)
+    x = Dense(64, activation='relu')(x)
+    # x = Dense(64, activation='relu')(x)
+
+    output = Dense(1)(x)
+
+    model = Model(gru_input, output)
+
     model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mean_squared_error', mean_acc])
     model.summary()
 
